@@ -22,10 +22,11 @@ public class User {
     private String fullName;
 
     @Column(nullable = false)
-    private String role = "USER";
+    private String role = "Store Manager";
 
     private String company;
     private String phoneNumber;
+    private String warehouseLocation;
 
     @Column(nullable = false)
     private boolean enabled = true;
