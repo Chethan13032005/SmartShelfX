@@ -2,6 +2,8 @@ package com.infosys.smartshelfx_backend.service;
 
 import com.infosys.smartshelfx_backend.model.User;
 import com.infosys.smartshelfx_backend.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     
     @Autowired
     private UserRepository userRepository;
@@ -19,8 +23,8 @@ public class UserService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private SmsService smsService;
+    // @Autowired
+    // private SmsService smsService;
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
     private static final Pattern PWD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
@@ -45,18 +49,17 @@ public class UserService {
         try {
             emailService.sendWelcomeEmail(saved.getEmail(), saved.getFullName());
         } catch (Exception e) {
-            // log and continue
-            System.out.println("Failed to send email: " + e.getMessage());
+            logger.error("Failed to send email: {}", e.getMessage());
         }
 
         // send SMS if phone number is provided
-        try {
-            if (saved.getPhoneNumber() != null && !saved.getPhoneNumber().isEmpty()) {
-                smsService.sendSms(saved.getPhoneNumber(), "Welcome to SmartShelfX, " + saved.getFullName());
-            }
-        } catch (Exception e) {
-            System.out.println("Failed to send SMS: " + e.getMessage());
-        }
+        // try {
+        //     if (saved.getPhoneNumber() != null && !saved.getPhoneNumber().isEmpty()) {
+        //         smsService.sendSms(saved.getPhoneNumber(), "Welcome to SmartShelfX, " + saved.getFullName());
+        //     }
+        // } catch (Exception e) {
+        //     logger.error("Failed to send SMS: {}", e.getMessage());
+        // }
 
         return saved;
     }
