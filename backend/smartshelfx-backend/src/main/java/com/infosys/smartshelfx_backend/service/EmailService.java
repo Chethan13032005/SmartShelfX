@@ -36,4 +36,24 @@ public class EmailService {
             logger.error("Failed to send welcome email to {}", to, e);
         }
     }
+
+    public void sendPasswordResetEmail(String to, String name, String newPassword) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(from);
+            msg.setTo(to);
+            msg.setSubject("SmartShelfX - Password Reset");
+            msg.setText("Hi " + (name != null ? name : "") + ",\n\n"
+                    + "Your password has been reset successfully.\n\n"
+                    + "Your new temporary password is: " + newPassword + "\n\n"
+                    + "For security reasons, we recommend changing this password after logging in.\n\n"
+                    + "If you did not request this password reset, please contact our support team immediately.\n\n"
+                    + "Regards,\nSmartShelfX Team");
+            mailSender.send(msg);
+            logger.info("Password reset email sent to {}", to);
+        } catch (Exception e) {
+            logger.error("Failed to send password reset email to {}", to, e);
+            throw new RuntimeException("Failed to send password reset email");
+        }
+    }
 }

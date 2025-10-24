@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -77,5 +78,93 @@ public class UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public String resetPassword(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("No account found with this email address"));
+
+        // Generate random password (8 chars with upper, lower, digit)
+        String newPassword = generateRandomPassword();
+        
+        // Update user password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Send email with new password
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), newPassword);
+            logger.info("Password reset email sent to: {}", email);
+        } catch (Exception e) {
+            logger.error("Failed to send password reset email: {}", e.getMessage());
+            throw new RuntimeException("Failed to send password reset email. Please try again later.");
+        }
+
+        return newPassword;
+    }
+
+    private String generateRandomPassword() {
+        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String allChars = upperCase + lowerCase + digits;
+        
+        StringBuilder password = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        
+        // Ensure at least one of each type
+        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+        password.append(digits.charAt(random.nextInt(digits.length())));
+        
+        // Fill remaining 5 characters
+        for (int i = 0; i < 5; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // Shuffle the password
+        char[] passwordArray = password.toString().toCharArray();
+        for (int i = passwordArray.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = passwordArray[i];
+            passwordArray[i] = passwordArray[j];
+            passwordArray[j] = temp;
+        }
+        
+        return new String(passwordArray);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User updateUserRole(Long id, String role) {
+        User user = getUserById(id);
+        user.setRole(role);
+        return userRepository.save(user);
+    }
+
+    public User toggleUserStatus(Long id) {
+        User user = getUserById(id);
+        user.setEnabled(!user.isEnabled());
+        return userRepository.save(user);
+    }
+
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+
+    public User updateUser(String email, String password, String phoneNumber, String fullName) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("No account found with this email address"));
+
+        user.setPassword(passwordEncoder.encode(password));
+        user.setPhoneNumber(phoneNumber);
+        user.setFullName(fullName);
+
+        return userRepository.save(user);
     }
 }
