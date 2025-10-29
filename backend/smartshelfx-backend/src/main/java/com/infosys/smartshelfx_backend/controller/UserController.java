@@ -81,7 +81,8 @@ public class UserController {
                 return ResponseEntity.badRequest().body("Email is required");
             }
             
-            String newPassword = userService.resetPassword(email);
+            // Trigger password reset process (email will be sent with the new password)
+            userService.resetPassword(email);
             Map<String, String> response = new HashMap<>();
             response.put("message", "A new password has been sent to your email address");
             return ResponseEntity.ok(response);
@@ -137,11 +138,11 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{id}/details")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('Admin')")
-    public ResponseEntity<?> updateUserDetails(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
         try {
-            User updated = userService.updateUserDetails(id, request);
+            User updated = userService.updateUserDetails(id, updates);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

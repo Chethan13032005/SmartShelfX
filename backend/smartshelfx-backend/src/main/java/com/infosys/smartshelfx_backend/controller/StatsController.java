@@ -22,7 +22,8 @@ public class StatsController {
     @PreAuthorize("isAuthenticated()")
     public Map<String, Long> getStats() {
         long totalProducts = inventoryRepository.count();
-        long lowStock = inventoryRepository.countByQuantityLessThanEqual(5);
+        // Align low stock threshold with frontend (<= 10 units)
+        long lowStock = inventoryRepository.countByQuantityLessThanEqual(10);
         long suppliers = inventoryRepository.countDistinctSuppliers();
         return Map.of(
                 "totalProducts", totalProducts,

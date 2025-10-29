@@ -25,7 +25,7 @@ public class InventoryController {
         return repo.findAll();
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/add")
     public Inventory create(@RequestBody Inventory item) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -36,7 +36,7 @@ public class InventoryController {
         return repo.save(item);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/update/{id}")
     public Inventory update(@PathVariable Long id, @RequestBody Inventory item) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -49,12 +49,13 @@ public class InventoryController {
         existing.setPrice(item.getPrice());
         existing.setSupplier(item.getSupplier());
         existing.setLocation(item.getLocation());
+        existing.setImageUrl(item.getImageUrl());
         existing.setUpdatedBy(username);
         existing.setUpdatedAt(LocalDateTime.now());
         return repo.save(existing);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/delete/{id}")
     public void delete(@PathVariable Long id) {
         repo.deleteById(id);

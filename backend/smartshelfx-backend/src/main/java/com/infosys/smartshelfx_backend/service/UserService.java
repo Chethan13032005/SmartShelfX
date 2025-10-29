@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -157,13 +158,23 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public User updateUser(String email, String password, String phoneNumber, String fullName) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("No account found with this email address"));
+    public User updateUserDetails(Long id, Map<String, Object> updates) {
+        User user = getUserById(id);
 
-        user.setPassword(passwordEncoder.encode(password));
-        user.setPhoneNumber(phoneNumber);
-        user.setFullName(fullName);
+        if (updates == null) return user;
+
+        Object firstName = updates.get("firstName");
+        Object lastName = updates.get("lastName");
+        Object company = updates.get("company");
+        Object phoneNumber = updates.get("phoneNumber");
+        Object warehouseLocation = updates.get("warehouseLocation");
+        // Role can still be managed via dedicated endpoint; ignore email/password edits here for safety
+
+        if (firstName instanceof String) user.setFirstName(((String) firstName).trim());
+        if (lastName instanceof String) user.setLastName(((String) lastName).trim());
+        if (company instanceof String) user.setCompany(((String) company).trim());
+        if (phoneNumber instanceof String) user.setPhoneNumber(((String) phoneNumber).trim());
+        if (warehouseLocation instanceof String) user.setWarehouseLocation(((String) warehouseLocation).trim());
 
         return userRepository.save(user);
     }
