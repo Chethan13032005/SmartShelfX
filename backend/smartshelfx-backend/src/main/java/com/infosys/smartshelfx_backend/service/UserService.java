@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class UserService {
@@ -31,6 +32,33 @@ public class UserService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
     private static final Pattern PWD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
 
+    // One-time safety: normalize any legacy roles in DB on application startup
+    @PostConstruct
+    public void normalizeExistingRoles() {
+        List<User> users = userRepository.findAll();
+        boolean changed = false;
+        for (User u : users) {
+            String role = u.getRole();
+            String normalized;
+            if (role == null || role.trim().isEmpty()) {
+                normalized = "Manager";
+            } else {
+                String r = role.trim().toLowerCase();
+                if (r.equals("admin")) normalized = "Admin";
+                else if (r.equals("manager") || r.equals("store manager") || r.equals("storemanager")) normalized = "Manager";
+                else if (r.equals("vendor")) normalized = "Vendor";
+                else normalized = "Manager";
+            }
+            if (!normalized.equals(u.getRole())) {
+                u.setRole(normalized);
+                changed = true;
+            }
+        }
+        if (changed) {
+            userRepository.saveAll(users);
+        }
+    }
+
     public User registerUser(User user) {
         if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
             throw new RuntimeException("Invalid email format");
@@ -42,6 +70,18 @@ public class UserService {
 
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Email already registered");
+        }
+
+        // Normalize role to supported values (Admin, Manager, Vendor), default Manager
+        String role = user.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            user.setRole("Manager");
+        } else {
+            String r = role.trim().toLowerCase();
+            if (r.equals("admin")) user.setRole("Admin");
+            else if (r.equals("manager") || r.equals("store manager")) user.setRole("Manager");
+            else if (r.equals("vendor")) user.setRole("Vendor");
+            else user.setRole("Manager");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -81,7 +121,13 @@ public class UserService {
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public String resetPassword(String email) {
+    /**
+     * Resets the user's password to a generated temporary password and attempts
+     * to send it via email. Returns true when the email was sent successfully,
+     * false when the email could not be delivered (the temporary password is
+     * still applied to the user's account in the database).
+     */
+    public boolean resetPassword(String email) {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("No account found with this email address"));
 
@@ -92,16 +138,17 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Send email with new password
-        try {
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), newPassword);
+        // Send email with new password. Email failures are logged but do not fail the
+        // password reset operation so that development/testing is not blocked when
+        // SMTP isn't configured.
+        boolean emailSent = emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), newPassword);
+        if (emailSent) {
             logger.info("Password reset email sent to: {}", email);
-        } catch (Exception e) {
-            logger.error("Failed to send password reset email: {}", e.getMessage());
-            throw new RuntimeException("Failed to send password reset email. Please try again later.");
+        } else {
+            logger.warn("Password reset email could not be sent to {}. Temporary password set in DB.", email);
         }
 
-        return newPassword;
+        return emailSent;
     }
 
     private String generateRandomPassword() {
@@ -141,7 +188,20 @@ public class UserService {
 
     public User updateUserRole(Long id, String role) {
         User user = getUserById(id);
-        user.setRole(role);
+
+        // Normalize incoming role to supported canonical values
+        String normalized;
+        if (role == null || role.trim().isEmpty()) {
+            normalized = "Manager";
+        } else {
+            String r = role.trim().toLowerCase();
+            if (r.equals("admin")) normalized = "Admin";
+            else if (r.equals("manager") || r.equals("store manager") || r.equals("storemanager")) normalized = "Manager";
+            else if (r.equals("vendor")) normalized = "Vendor";
+            else normalized = "Manager";
+        }
+
+        user.setRole(normalized);
         return userRepository.save(user);
     }
 

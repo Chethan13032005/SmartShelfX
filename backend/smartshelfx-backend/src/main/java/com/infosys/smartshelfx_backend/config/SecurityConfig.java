@@ -41,11 +41,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/users/register", "/api/users/login", "/api/users/forgot-password").permitAll()
-                // Secure all other API endpoints
-                .requestMatchers("/api/**").authenticated()
+                // Fully open all API and web endpoints for now (no restrictions)
+                .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/", "/showNewProductForm", "/saveProduct", "/showFormForUpdate/**", "/deleteProduct/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

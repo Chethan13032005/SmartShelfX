@@ -37,7 +37,13 @@ public class EmailService {
         }
     }
 
-    public void sendPasswordResetEmail(String to, String name, String newPassword) {
+    /**
+     * Attempts to send a password reset email. Returns true if the email was sent,
+     * false otherwise. This method intentionally does not throw so that the
+     * password reset flow can continue in development environments where mail
+     * server is not configured.
+     */
+    public boolean sendPasswordResetEmail(String to, String name, String newPassword) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setFrom(from);
@@ -51,9 +57,11 @@ public class EmailService {
                     + "Regards,\nSmartShelfX Team");
             mailSender.send(msg);
             logger.info("Password reset email sent to {}", to);
+            return true;
         } catch (Exception e) {
-            logger.error("Failed to send password reset email to {}", to, e);
-            throw new RuntimeException("Failed to send password reset email");
+            // Log the failure but do not throw - caller will handle behavior for dev vs prod
+            logger.error("Failed to send password reset email to {}: {}", to, e.getMessage());
+            return false;
         }
     }
 }

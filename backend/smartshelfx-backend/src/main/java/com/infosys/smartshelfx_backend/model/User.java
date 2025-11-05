@@ -31,8 +31,13 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    // Legacy support: some databases have a non-null `name` column
+    // Map it and keep it in sync with fullName to avoid insert errors
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Column(nullable = false)
-    private String role = "Store Manager";
+    private String role = "Manager";
 
     private String company;
     
@@ -69,11 +74,27 @@ public class User {
         }
     }
 
+    // Keep legacy `name` column populated (fall back to fullName, then email)
+    private void updateName() {
+        String fn = (this.fullName != null && !this.fullName.trim().isEmpty())
+                ? this.fullName.trim()
+                : null;
+        if (fn == null) {
+            String composed = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+            fn = !composed.isEmpty() ? composed : null;
+        }
+        if (fn == null && email != null && !email.trim().isEmpty()) {
+            fn = email.trim();
+        }
+        this.name = fn != null ? fn : ""; // never null to satisfy NOT NULL constraint
+    }
+
     // JPA lifecycle callback - called before insert and update
     @PrePersist
     @PreUpdate
     private void ensureFullName() {
         updateFullName();
+        updateName();
     }
 
     // Override setters to keep fullName in sync
