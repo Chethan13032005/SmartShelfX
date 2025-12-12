@@ -7,6 +7,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class EmailService {
 
@@ -62,6 +64,67 @@ public class EmailService {
             // Log the failure but do not throw - caller will handle behavior for dev vs prod
             logger.error("Failed to send password reset email to {}: {}", to, e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Send Purchase Order notification email to vendor
+     */
+    public void sendPONotificationEmail(String to, String vendorName, String poNumber, int itemCount, String status) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(from);
+            msg.setTo(to);
+            msg.setSubject("SmartShelfX - New Purchase Order #" + poNumber);
+            
+            String statusMessage = "";
+            if ("PENDING".equals(status)) {
+                statusMessage = "A new purchase order has been created and is pending approval.";
+            } else if ("Pending Approval".equals(status)) {
+                statusMessage = "A new purchase order has been created and requires your attention once approved.";
+            }
+            
+            msg.setText("Hi " + (vendorName != null ? vendorName : "") + ",\n\n"
+                    + statusMessage + "\n\n"
+                    + "Purchase Order Number: " + poNumber + "\n"
+                    + "Number of Items: " + itemCount + "\n"
+                    + "Status: " + status + "\n\n"
+                    + "Please log in to the SmartShelfX portal to view the complete details and take necessary action.\n\n"
+                    + "Regards,\nSmartShelfX Team");
+            mailSender.send(msg);
+            logger.info("PO notification email sent to {} for PO #{}", to, poNumber);
+        } catch (Exception e) {
+            logger.error("Failed to send PO notification email to {} for PO #{}", to, poNumber, e);
+        }
+    }
+
+    /**
+     * Send grouped Purchase Order notification email to vendor (for multiple POs)
+     */
+    public void sendGroupedPONotificationEmail(String to, String vendorName, List<String> poNumbers, int totalItems) {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(from);
+            msg.setTo(to);
+            msg.setSubject("SmartShelfX - " + poNumbers.size() + " New Purchase Orders Created");
+            
+            StringBuilder poList = new StringBuilder();
+            for (String poNum : poNumbers) {
+                poList.append("  - ").append(poNum).append("\n");
+            }
+            
+            msg.setText("Hi " + (vendorName != null ? vendorName : "") + ",\n\n"
+                    + poNumbers.size() + " new purchase orders have been created from AI-powered restock recommendations.\n\n"
+                    + "Purchase Order Numbers:\n" + poList.toString() + "\n"
+                    + "Total Items: " + totalItems + "\n"
+                    + "Status: Pending Approval\n\n"
+                    + "These orders will be available for processing once approved by the admin.\n"
+                    + "Please log in to the SmartShelfX portal to view complete details.\n\n"
+                    + "Regards,\nSmartShelfX Team");
+            mailSender.send(msg);
+            logger.info("Grouped PO notification email sent to {} for {} POs", to, poNumbers.size());
+        } catch (Exception e) {
+            logger.error("Failed to send grouped PO notification email to {}", to, e);
         }
     }
 }

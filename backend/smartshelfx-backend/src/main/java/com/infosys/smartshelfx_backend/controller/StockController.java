@@ -3,7 +3,9 @@ package com.infosys.smartshelfx_backend.controller;
 import com.infosys.smartshelfx_backend.model.Inventory;
 import com.infosys.smartshelfx_backend.model.StockTransaction;
 import com.infosys.smartshelfx_backend.model.User;
+import com.infosys.smartshelfx_backend.model.PurchaseOrder;
 import com.infosys.smartshelfx_backend.repository.InventoryRepository;
+import com.infosys.smartshelfx_backend.repository.PurchaseOrderRepository;
 import com.infosys.smartshelfx_backend.repository.StockTransactionRepository;
 import com.infosys.smartshelfx_backend.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,13 +26,16 @@ public class StockController {
     private final StockTransactionRepository transactionRepo;
     private final InventoryRepository inventoryRepo;
     private final UserRepository userRepo;
+    private final PurchaseOrderRepository purchaseOrderRepo;
 
     public StockController(StockTransactionRepository transactionRepo, 
                           InventoryRepository inventoryRepo,
-                          UserRepository userRepo) {
+                          UserRepository userRepo,
+                          PurchaseOrderRepository purchaseOrderRepo) {
         this.transactionRepo = transactionRepo;
         this.inventoryRepo = inventoryRepo;
         this.userRepo = userRepo;
+        this.purchaseOrderRepo = purchaseOrderRepo;
     }
 
     /**
@@ -39,6 +45,7 @@ public class StockController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/in")
+	@Transactional
     public ResponseEntity<?> recordStockIn(@RequestBody Map<String, Object> request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth != null ? auth.getName() : "system";
@@ -92,6 +99,7 @@ public class StockController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/out")
+	@Transactional
     public ResponseEntity<?> recordStockOut(@RequestBody Map<String, Object> request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth != null ? auth.getName() : "system";
@@ -122,6 +130,12 @@ public class StockController {
             product.setUpdatedBy(username);
             product.setUpdatedAt(LocalDateTime.now());
             inventoryRepo.save(product);
+
+            // Check if stock is below reorder level and issue a warning
+            if (product.getQuantity() <= product.getReorderLevel()) {
+                System.out.println("LOW STOCK WARNING: Product '" + product.getName() + "' (ID: " + product.getId() + ") has fallen below the reorder level. Current quantity: " + product.getQuantity());
+                autoGeneratePurchaseOrder(product, username);
+            }
 
             // Create transaction record
             StockTransaction transaction = new StockTransaction();
@@ -183,5 +197,27 @@ public class StockController {
         }
 
         return ResponseEntity.ok(transactionRepo.findTop10ByOrderByCreatedAtDesc());
+    }
+
+    private void autoGeneratePurchaseOrder(Inventory product, String performedBy) {
+        if (product.getVendor() == null || product.getVendor().isEmpty()) {
+            System.out.println("ERROR: Cannot auto-generate PO for product '" + product.getName() + "' (ID: " + product.getId() + "). No vendor specified.");
+            return;
+        }
+
+        userRepo.findByEmail(product.getVendor()).ifPresentOrElse(vendor -> {
+            PurchaseOrder po = new PurchaseOrder();
+            po.setVendorId(vendor.getId());
+            po.setVendorEmail(vendor.getEmail());
+            po.setProductId(product.getId());
+            po.setProductName(product.getName());
+            po.setQuantity(product.getReorderQuantity());
+            po.setStatus("PENDING");
+            po.setCreatedBy(performedBy);
+            purchaseOrderRepo.save(po);
+            System.out.println("Auto-generated Purchase Order for product '" + product.getName() + "' (ID: " + product.getId() + ").");
+        }, () -> {
+            System.out.println("ERROR: Cannot auto-generate PO for product '" + product.getName() + "' (ID: " + product.getId() + "). Vendor not found: " + product.getVendor());
+        });
     }
 }

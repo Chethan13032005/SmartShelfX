@@ -2,13 +2,7 @@ package com.infosys.smartshelfx_backend.model;
 
 import jakarta.persistence.*;
 import jakarta.persistence.GenerationType;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "users")
 public class User {
@@ -31,8 +25,6 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    // Legacy support: some databases have a non-null `name` column
-    // Map it and keep it in sync with fullName to avoid insert errors
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -50,61 +42,84 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    // Constructor with required fields
-    public User(String email, String password, String firstName, String lastName) {
+    // Constructors
+    public User() {}
+
+    public User(Long id, String email, String password, String firstName, String lastName, 
+                String fullName, String name, String role, String company, 
+                String phoneNumber, String warehouseLocation, boolean enabled) {
+        this.id = id;
         this.email = email;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        // Automatically set fullName when firstName and lastName are provided
-        updateFullName();
+        this.fullName = fullName;
+        this.name = name;
+        this.role = role;
+        this.company = company;
+        this.phoneNumber = phoneNumber;
+        this.warehouseLocation = warehouseLocation;
+        this.enabled = enabled;
     }
 
-    // Helper method to update full name from first and last names
-    private void updateFullName() {
-        if (firstName != null && !firstName.trim().isEmpty()) {
-            if (lastName != null && !lastName.trim().isEmpty()) {
-                this.fullName = firstName + " " + lastName;
-            } else {
-                this.fullName = firstName;
-            }
-        } else if (fullName == null) {
-            // Set a default value if both firstName and fullName are null
-            this.fullName = "";
-        }
-    }
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    // Keep legacy `name` column populated (fall back to fullName, then email)
-    private void updateName() {
-        String fn = (this.fullName != null && !this.fullName.trim().isEmpty())
-                ? this.fullName.trim()
-                : null;
-        if (fn == null) {
-            String composed = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-            fn = !composed.isEmpty() ? composed : null;
-        }
-        if (fn == null && email != null && !email.trim().isEmpty()) {
-            fn = email.trim();
-        }
-        this.name = fn != null ? fn : ""; // never null to satisfy NOT NULL constraint
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    // JPA lifecycle callback - called before insert and update
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
+    public String getCompany() { return company; }
+    public void setCompany(String company) { this.company = company; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getWarehouseLocation() { return warehouseLocation; }
+    public void setWarehouseLocation(String warehouseLocation) { this.warehouseLocation = warehouseLocation; }
+
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    // JPA lifecycle callback
     @PrePersist
     @PreUpdate
     private void ensureFullName() {
-        updateFullName();
-        updateName();
-    }
-
-    // Override setters to keep fullName in sync
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-        updateFullName();
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-        updateFullName();
+        if (fullName == null || fullName.trim().isEmpty()) {
+            if (firstName != null && !firstName.trim().isEmpty()) {
+                if (lastName != null && !lastName.trim().isEmpty()) {
+                    this.fullName = firstName + " " + lastName;
+                } else {
+                    this.fullName = firstName;
+                }
+            } else if (email != null) {
+                this.fullName = email;
+            } else {
+                this.fullName = "";
+            }
+        }
+        
+        if (name == null || name.trim().isEmpty()) {
+            this.name = (fullName != null && !fullName.trim().isEmpty()) ? fullName : 
+                        (email != null && !email.trim().isEmpty()) ? email : "";
+        }
     }
 }

@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  sku VARCHAR(64) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  current_stock INT NOT NULL DEFAULT 0,
+  reorder_level INT NOT NULL DEFAULT 0,
+  vendor_email VARCHAR(255),
+  UNIQUE KEY uq_products_sku (sku)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

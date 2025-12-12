@@ -1,0 +1,35 @@
+node_modules/
+*.log
+*.log.*
+hs_err_*.log
+replay_*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+target/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# Dependencies
+package-lock.json
+yarn.lock
+
+# Temporary
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

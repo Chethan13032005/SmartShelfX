@@ -186,6 +186,10 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public List<User> getUsersByRole(String role) {
+        return userRepository.findByRole(role);
+    }
+
     public User updateUserRole(Long id, String role) {
         User user = getUserById(id);
 

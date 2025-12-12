@@ -1,13 +1,12 @@
 package com.infosys.smartshelfx_backend.controller;
 
-import com.infosys.smartshelfx_backend.model.User;
+import com.infosys.smartshelfx_backend.model.PurchaseOrder;
 import com.infosys.smartshelfx_backend.repository.InventoryRepository;
 import com.infosys.smartshelfx_backend.repository.PurchaseOrderRepository;
 import com.infosys.smartshelfx_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,22 +29,8 @@ public class StatsController {
     /**
      * Admin Dashboard Stats
      */
-    @GetMapping("/admin")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getAdminStats(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userRepository.findByEmail(username).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not found"));
-        }
-
-        String role = user.getRole() != null ? user.getRole().trim().toLowerCase() : "";
-        if (!role.equals("admin")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Admin access required"));
-        }
+        @GetMapping("/admin")
+        public ResponseEntity<?> getAdminStats(Authentication authentication) {
 
         long totalProducts = inventoryRepository.count();
         long totalVendors = userRepository.countByRole("Vendor");
@@ -70,22 +55,9 @@ public class StatsController {
     /**
      * Manager Dashboard Stats
      */
-    @GetMapping("/manager")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getManagerStats(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userRepository.findByEmail(username).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not found"));
-        }
-
-        String role = user.getRole() != null ? user.getRole().trim().toLowerCase() : "";
-        if (!(role.equals("manager") || role.equals("admin"))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Manager access required"));
-        }
+        @GetMapping("/manager")
+        public ResponseEntity<?> getManagerStats(Authentication authentication) {
+                String username = authentication != null ? authentication.getName() : null;
 
         long totalSKUs = inventoryRepository.count();
         
@@ -95,7 +67,7 @@ public class StatsController {
                 .count();
 
         // Pending POs created by current user
-        long pendingPOs = purchaseOrderRepository.findByCreatedByOrderByCreatedAtDesc(username).stream()
+        long pendingPOs = (username != null ? purchaseOrderRepository.findByCreatedByOrderByCreatedAtDesc(username) : Collections.<PurchaseOrder>emptyList()).stream()
                 .filter(po -> po.getStatus().equals("PENDING"))
                 .count();
 
@@ -116,23 +88,10 @@ public class StatsController {
     /**
      * Vendor Dashboard Stats
      */
-    @GetMapping("/vendor")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getVendorStats(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userRepository.findByEmail(username).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not found"));
-        }
-
-        if (!user.getRole().equalsIgnoreCase("Vendor")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Vendor access required"));
-        }
-
-        var vendorPOs = purchaseOrderRepository.findByVendorEmailOrderByCreatedAtDesc(username);
+        @GetMapping("/vendor")
+        public ResponseEntity<?> getVendorStats(Authentication authentication) {
+                String username = authentication != null ? authentication.getName() : null;
+                var vendorPOs = (username != null ? purchaseOrderRepository.findByVendorEmailOrderByCreatedAtDesc(username) : Collections.<PurchaseOrder>emptyList());
 
         long pendingOrders = vendorPOs.stream()
                 .filter(po -> po.getStatus().equals("PENDING") || po.getStatus().equals("APPROVED"))

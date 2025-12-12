@@ -97,6 +97,7 @@ public class InventoryController {
             if (item.getImageUrl() != null) existing.setImageUrl(item.getImageUrl());
             if (item.getSku() != null) existing.setSku(item.getSku());
             if (item.getReorderLevel() != null) existing.setReorderLevel(item.getReorderLevel());
+            if (item.getReorderQuantity() != null) existing.setReorderQuantity(item.getReorderQuantity());
             
             existing.setUpdatedBy(username);
             existing.setUpdatedAt(LocalDateTime.now());

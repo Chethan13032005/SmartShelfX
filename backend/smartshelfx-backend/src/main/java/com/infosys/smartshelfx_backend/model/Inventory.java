@@ -13,24 +13,30 @@ public class Inventory {
 
     @Column(name = "name", nullable = false)
     private String name;  // maps to DB 'name' column
-    
-    @Column(name = "product_name", nullable = false)
-    private String productName;  // maps to DB 'product_name' column
+
+    // Legacy code referenced productName; keep for UI compatibility but mark transient (not a DB column)
+    @Transient
+    private String productName;
 
     @Column(name = "sku", nullable = false, unique = true)
     private String sku;
 
-    private int quantity;
+    @Column(name = "current_stock")
+    private int quantity; // maps to DB 'current_stock'
 
     private String location;
 
     private String category;
 
-    @Column(name = "vendor")
-    private String vendor;
+    @Column(name = "vendor_email")
+    private String vendor; // maps to DB 'vendor_email'
 
     @Column(name = "reorder_level")
     private Integer reorderLevel = 10;
+
+    // Column may not exist in legacy schema; mark transient to avoid errors
+    @Transient
+    private Integer reorderQuantity = 20;
 
     @Column(precision = 10, scale = 2, nullable = false)
     private BigDecimal price = BigDecimal.ZERO;
@@ -58,17 +64,21 @@ public class Inventory {
     public String getName() { return name; }
     public void setName(String name) { 
         this.name = name;
-        this.productName = name;  // Keep both columns in sync
+        this.productName = name;  // keep transient field in sync
     }
 
     public String getProductName() { return productName; }
     public void setProductName(String productName) { 
         this.productName = productName;
-        this.name = productName;  // Keep both columns in sync
+        this.name = productName; // keep name aligned
     }
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    // Alias methods for stock (same as quantity)
+    public int getStock() { return quantity; }
+    public void setStock(int stock) { this.quantity = stock; }
 
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
@@ -82,8 +92,13 @@ public class Inventory {
     public String getVendor() { return vendor; }
     public void setVendor(String vendor) { this.vendor = vendor; }
 
+    public String getVendorEmail() { return vendor; }
+
     public Integer getReorderLevel() { return reorderLevel; }
     public void setReorderLevel(Integer reorderLevel) { this.reorderLevel = reorderLevel; }
+
+    public Integer getReorderQuantity() { return reorderQuantity; }
+    public void setReorderQuantity(Integer reorderQuantity) { this.reorderQuantity = reorderQuantity; }
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }

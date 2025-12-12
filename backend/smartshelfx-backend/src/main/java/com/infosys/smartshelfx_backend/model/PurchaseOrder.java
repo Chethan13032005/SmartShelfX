@@ -10,6 +10,9 @@ public class PurchaseOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "po_number", unique = true, nullable = false)
+    private String poNumber;
+
     @Column(name = "vendor_id", nullable = false)
     private Long vendorId;
 
@@ -53,6 +56,9 @@ public class PurchaseOrder {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (poNumber == null || poNumber.isEmpty()) {
+            poNumber = "PO-" + System.currentTimeMillis();
+        }
     }
 
     @PreUpdate
@@ -63,6 +69,9 @@ public class PurchaseOrder {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getPoNumber() { return poNumber; }
+    public void setPoNumber(String poNumber) { this.poNumber = poNumber; }
 
     public Long getVendorId() { return vendorId; }
     public void setVendorId(Long vendorId) { this.vendorId = vendorId; }

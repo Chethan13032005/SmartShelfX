@@ -2,9 +2,11 @@ package com.infosys.smartshelfx_backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @Entity
 @Table(name = "stock_transactions")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StockTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,6 +14,10 @@ public class StockTransaction {
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "product_id", insertable = false, updatable = false)
+    private Inventory product;
 
     @Column(nullable = false, length = 10)
     private String type; // "IN" or "OUT"
@@ -39,6 +45,9 @@ public class StockTransaction {
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
+
+    public Inventory getProduct() { return product; }
+    public void setProduct(Inventory product) { this.product = product; }
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
