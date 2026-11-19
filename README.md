@@ -1,198 +1,188 @@
-# SmartShelfX - AI-Based Inventory Forecasting & Auto Restock
 
-A comprehensive inventory management system with AI-powered demand forecasting, automated restock recommendations, and multi-service architecture.
+# SmartShelfX
 
-## 🎯 Features
+**Inventory Management System with Demand Forecasting and Automated Restocking**
 
-- **AI Demand Forecasting** - Predict future demand using historical data with 6 ML algorithms
-- **Auto-Restock System** - Automated purchase order creation based on forecasts
-- **Multi-Backend Architecture** - Spring Boot (main) + Node.js orchestrator + Java ML microservice
-- **Role-Based Access** - Admin, Manager, Vendor dashboards with JWT authentication
-- **Real-Time Notifications** - Stock alerts, PO updates, expiry warnings
-- **React Frontend** - Modern UI with warm, nature-inspired design (no "AI purple")
+SmartShelfX is an inventory management application developed during the Infosys Springboard Virtual Internship. It helps administrators and managers monitor stock, forecast future demand, and manage purchase orders through role-based dashboards.
 
-## 📁 Project Structure
+## Key Features
 
+- **Demand Forecasting:** Estimates future inventory requirements using historical stock transactions.
+- **Automated Restocking:** Generates purchase order suggestions when inventory falls below required levels.
+- **Inventory Management:** Tracks stock movements, including IN and OUT transactions.
+- **Purchase Order Management:** Supports purchase order creation, approval, and dispatch workflows.
+- **Role-Based Access:** Separate dashboards for Admin, Manager, and Vendor.
+- **Notifications:** Provides stock alerts and purchase order updates.
+
+## Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React 18, Chart.js, Axios |
+| Main Backend | Java 17, Spring Boot 3.1.5 |
+| Orchestration | Node.js, Express |
+| Forecasting Service | Java, Spring Boot, Weka |
+| Database | MySQL 8.0 |
+| Authentication | JWT |
+| Build Tools | Maven, npm |
+
+## System Architecture
+
+```mermaid
+flowchart TB
+    U["Admin / Manager / Vendor"]
+
+    subgraph FRONTEND["Frontend"]
+        R["React Application"]
+        D["Role-Based Dashboards"]
+    end
+
+    subgraph BACKEND["Backend Services"]
+        S["Spring Boot API<br/>Port 8082"]
+        N["Node.js Orchestrator<br/>Port 4000"]
+        F["Java Forecast Service<br/>Port 8080"]
+    end
+
+    DB[("MySQL Database")]
+
+    U --> R
+    R --> D
+    D --> S
+
+    S --> DB
+    S --> N
+    N --> F
+    F --> N
+    N --> S
+
+    S --> R
 ```
+
+## Project Structure
+
+```text
 SmartShelfX/
+│
 ├── backend/
-│   ├── smartshelfx-backend/       # Main Spring Boot API (port 8082)
-│   ├── node-backend/               # Node.js orchestrator (port 4000)
-│   └── java-forecast-service/     # Java ML microservice (port 8080)
+│   ├── smartshelfx-backend/
+│   ├── node-backend/
+│   └── java-forecast-service/
+│
 ├── frontend/
-│   └── smartshelfx-frontend/      # React app (port 3000)
-├── docs/                          # Documentation
-└── RUN_THIS_IN_MYSQL_WORKBENCH.sql # Database setup
+│   └── smartshelfx-frontend/
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+└── SmartShelfX.pptx
 ```
 
-## 🚀 Quick Start
+## Getting Started
 
-### 1. Database Setup
-```sql
--- Run in MySQL Workbench
-source RUN_THIS_IN_MYSQL_WORKBENCH.sql
+### Prerequisites
+
+- Java 17
+- Node.js and npm
+- MySQL 8.0
+- Maven
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/Chethan13032005/SmartShelfX.git
+
+cd SmartShelfX
 ```
 
-### 2. Backend (Spring Boot - Main API)
+### 2. Configure Database
+
+Create the MySQL database and configure the database credentials in the Spring Boot application properties.
+
+Database name:
+
+```text
+smartshelfx
+```
+
+### 3. Start Main Backend
+
 ```powershell
 cd backend\smartshelfx-backend
+
 .\mvnw.cmd spring-boot:run
 ```
-Runs on http://localhost:8082
 
-### 3. Java Forecast Service (Optional ML Service)
+Runs at `http://localhost:8082`.
+
+### 4. Start Frontend
+
+Open another terminal:
+
 ```powershell
-cd backend\java-forecast-service
-.\mvnw.cmd spring-boot:run
-```
-Runs on http://localhost:8080
+cd frontend\smartshelfx-frontend
 
-### 4. Node Backend (Optional Orchestrator)
+npm install
+npm start
+```
+
+Runs at `http://localhost:3000`.
+
+### 5. Start Optional Services
+
+**Node.js Orchestrator**
+
 ```powershell
 cd backend\node-backend
+
 npm install
 cp .env.example .env
 npm run dev
 ```
-Runs on http://localhost:4000
 
-### 5. Frontend (React)
+Runs at `http://localhost:4000`.
+
+**Java Forecasting Service**
+
 ```powershell
-cd frontend\smartshelfx-frontend
-npm install
-npm start
-```
-Runs on http://localhost:3000
-
-## 🔑 Default Login
-
-- **Admin**: admin@smartshelf.com / Admin@123
-- **Manager**: manager@smartshelf.com / Manager@123
-- **Vendor**: vendor@smartshelf.com / Vendor@123
-
-## 📊 Key Endpoints
-
-### Main Spring Boot API (8082)
-- `POST /api/auth/login` - Authentication
-- `GET /api/forecast/all` - All demand forecasts
-- `POST /api/forecast/run` - Trigger forecast analysis
-- `GET /api/po/suggested` - Auto-restock suggestions
-- `GET /api/notifications` - User notifications
-
-### Node Orchestrator (4000)
-- `POST /api/forecast/run` - Run ML forecast via Java service
-- `POST /api/po/auto` - Create auto POs
-- `GET /api/notifications` - Notifications feed
-
-### Java Forecast Service (8080)
-- `POST /forecast/predict` - ML demand prediction
-
-## 🎨 UI Features
-
-- **Dashboard**: Role-based analytics and KPIs
-- **Demand Forecasting**: 
-  - 7-day daily forecasts + 4-week projections
-  - Risk classification (Critical/High/Medium/Low)
-  - Interactive charts with warm color scheme
-  - Confidence scoring (0-100%)
-- **Auto-Restock**:
-  - AI-driven PO suggestions
-  - Vendor integration
-  - Email notifications
-- **Stock Management**: Real-time IN/OUT tracking
-- **Purchase Orders**: Full lifecycle management
-
-## 🛠️ Technologies
-
-**Backend:**
-- Spring Boot 3.1.5 (Java 17)
-- Node.js + Express
-- MySQL 8.0
-- JWT Authentication
-- Weka ML (Java forecasting)
-
-**Frontend:**
-- React 18
-- Chart.js (visualizations)
-- Tailwind CSS (warm/nature-inspired design)
-- Axios (API calls)
-
-## 📖 Documentation
-
-- [START_HERE.md](START_HERE.md) - Main guide
-- [DEMAND_FORECASTING_GUIDE.md](DEMAND_FORECASTING_GUIDE.md) - Forecasting details
-- [backend/INTEGRATION_GUIDE.md](backend/INTEGRATION_GUIDE.md) - Multi-service setup
-- [docs/USER_ROLES.md](docs/USER_ROLES.md) - Role permissions
-
-## 🔧 Configuration
-
-### Backend (.env for node-backend)
-```env
-DB_HOST=127.0.0.1
-DB_USER=root
-DB_PASS=yourpassword
-DB_NAME=smartshelfx
-FORECAST_SERVICE_URL=http://localhost:8080/forecast/predict
-```
-
-### Frontend (.env.development)
-```env
-REACT_APP_API_URL=http://localhost:8082/api
-```
-
-## 📝 Development
-
-**Start all services:**
-```powershell
-# Terminal 1 - Main backend
-cd backend\smartshelfx-backend
-.\mvnw.cmd spring-boot:run
-
-# Terminal 2 - Frontend
-cd frontend\smartshelfx-frontend
-npm start
-```
-
-**Optional microservices:**
-```powershell
-# Terminal 3 - Node orchestrator
-cd backend\node-backend
-npm run dev
-
-# Terminal 4 - Java forecast
 cd backend\java-forecast-service
+
 .\mvnw.cmd spring-boot:run
 ```
 
-## 🎯 Forecasting Algorithms
+Runs at `http://localhost:8080`.
 
-1. **Moving Average** (14-day window)
-2. **Exponential Smoothing** (for stable patterns)
-3. **Trend Analysis** (first-half vs second-half)
-4. **Seasonal Detection** (weekday patterns)
-5. **Volatility Calculation** (coefficient of variation)
-6. **Confidence Scoring** (multi-factor: data quality, coverage, stability)
+## API Overview
 
-## 🚨 Troubleshooting
+| Service | Endpoint | Purpose |
+|---|---|---|
+| Spring Boot | `POST /api/auth/login` | Authentication |
+| Spring Boot | `GET /api/forecast/all` | Retrieve forecasts |
+| Spring Boot | `POST /api/forecast/run` | Run demand forecasting |
+| Spring Boot | `GET /api/po/suggested` | Retrieve restock suggestions |
+| Spring Boot | `GET /api/notifications` | Retrieve notifications |
+| Node.js | `POST /api/forecast/run` | Trigger forecasting workflow |
+| Node.js | `POST /api/po/auto` | Create purchase orders |
+| Java Forecast | `POST /forecast/predict` | Generate demand predictions |
 
-**Backend won't start:**
-- Ensure MySQL is running
-- Check port 8082 is free
-- Verify DB credentials in `application.properties`
+## Demand Forecasting
 
-**Frontend compile errors:**
-- Run `npm install` in frontend folder
-- Clear node_modules: `Remove-Item node_modules -Recurse -Force ; npm install`
+The forecasting module describes the following techniques:
 
-**Forecast not working:**
-- Ensure you have historical stock_transactions data
-- Check Java forecast service is running (if using microservices)
-- Verify `FORECAST_SERVICE_URL` in node backend .env
+- Moving Average
+- Exponential Smoothing
+- Trend Analysis
+- Seasonal Pattern Detection
+- Volatility Calculation
+- Confidence Scoring
 
-## 📜 License
+## Project Information
 
-See [LICENSE](LICENSE) file.
+**Project:** SmartShelfX
 
-## 👥 Team
+**Internship:** Infosys Springboard Virtual Internship 6.0
 
-Infosys SmartShelfX Team - AI-Based Inventory Management
+**Domain:** Full-Stack Development | Inventory Management | Demand Forecasting
+
+**Repository:** [GitHub - SmartShelfX](https://github.com/Chethan13032005/SmartShelfX)
+
+**License:** MIT
